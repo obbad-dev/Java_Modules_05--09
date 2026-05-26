@@ -1,13 +1,13 @@
 package rabat.s1337.spring.printer;
 
-import rabat.s1337.spring.renderer.Renderer;
-
 import java.time.LocalDateTime;
 
-public class PrinterWithDateTimeImpl implements Printer{
-    private Renderer renderer;
+import rabat.s1337.spring.render.Render;
 
-    public PrinterWithDateTimeImpl(Renderer renderer){
+public class PrinterWithDateTimeImpl implements Printer{
+    private Render renderer;
+
+    public PrinterWithDateTimeImpl(Render renderer){
         this.renderer = renderer;
     }
     @Override

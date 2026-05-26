@@ -1,17 +1,17 @@
-package rabat.s1337.spring.renderer;
+package rabat.s1337.spring.render;
 
 import rabat.s1337.spring.preProcessor.PreProcessor;
 
-public class RendererErrImpl implements Renderer{
+public class RenderStandardImpl implements Render{
     private PreProcessor preProcessor;
 
-    public RendererErrImpl(PreProcessor preProcessor) {
+    public RenderStandardImpl(PreProcessor preProcessor) {
         this.preProcessor = preProcessor;
     }
 
     @Override
     public void render(String message) {
         message = preProcessor.process(message);
-        System.err.println(message);
+        System.out.println(message);
     }
 }

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+		https://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <bean id="preProcessorToUpper"
+            class="rabat.s1337.spring.preProcessor.PreProcessorToUpperImpl" />
+
+    <bean id="preProcessorToLower"
+            class="rabat.s1337.spring.preProcessor.PreProcessorToLowerImpl" />
+
+    <bean id="renderErr" class="rabat.s1337.spring.render.RenderErrImpl">
+        <constructor-arg ref="preProcessorToUpper"/>
+    </bean>
+        <bean id="printerWithPrefix" class="rabat.s1337.spring.printer.PrinterWithPrefixImpl">
+        <constructor-arg ref="renderErr"/>
+        <property name="prefix" value="Prefix"/>
+    </bean>
+
+</beans>
