@@ -1,294 +1,114 @@
-# Java Module 06 – JUnit & Mockito
+# Java Module 06 – JUnit / Mockito
 
-## Project Overview
-End-to-end mini-project to learn unit tests, integration tests, and mock-based service tests across four progressive exercises.
+## Overview
 
-## Learning Flow
-```
-[ Pure logic tests ]
-        ↓
-[ In-memory DB + DataSource ]
-        ↓
-[ JDBC Repository + CRUD tests ]
-        ↓
-[ Service layer + Mockito mocks ]
-```
+Java Module 06 introduces professional **software testing methodologies** in Java. Writing production code is only half the engineering challenge; ensuring that code is resilient, testable, regression-free, and isolated requires automated testing frameworks.
 
-## Features
-- Pure logic unit testing with JUnit 5
-- In-memory database integration testing with HSQLDB
-- JDBC repository CRUD tests against a real schema and data set
-- Service-layer unit testing with Mockito
+This module covers the modern test stack:
+- **JUnit 5 (Jupiter)**: The standard Java testing framework.
+- **Parameterized & Data-Driven Testing**: Testing multiple inputs using `@ValueSource` and `@CsvFileSource`.
+- **In-Memory Integration Testing**: Using **HSQLDB** and Spring JDBC's `EmbeddedDatabaseBuilder` to test persistence layers without external database dependencies.
+- **Mocking & Isolation with Mockito**: Using `@Mock`, `@InjectMocks`, stubbing (`when().thenReturn()`), and interaction verification (`verify()`) to test business logic in total isolation from data stores.
 
-## Tech Stack
-- JUnit 5
-- Mockito
-- HSQLDB (embedded)
-- Spring JDBC (EmbeddedDatabaseBuilder)
-- Java + JDBC
+---
 
-## Exercises
+## Main Programming Concepts Introduced
 
-### Exercise 00 – NumberWorker (Pure Logic + Parameterized Tests)
-**Goal:** Learn basic JUnit 5, parameterized tests, and CSV-driven tests.
+1. **The Test Pyramid & Test Isolation**
+   - Unit tests verify small, isolated units of execution fast and deterministically.
+   - Integration tests verify that components (e.g. Repositories) interact correctly with databases.
+   - Tests must have no side effects on each other (`@BeforeEach` ensures clean state).
 
-**Core class:** `NumberWorker`
-- `boolean isPrime(int number)`
-  - Returns `true` if number is prime
-  - Throws `IllegalNumberException` for number `<= 1`
-- `int digitsSum(int number)`
-  - Returns sum of digits (e.g., 1234 -> 10)
+2. **Parameterized Testing**
+   - Avoiding repetitive test code by feeding parameters into a single test method.
+   - Using `@ValueSource` for primitive literals and `@CsvFileSource` for external tabular datasets.
 
-**Test ideas:** `NumberWorkerTest`
-- `@ParameterizedTest @ValueSource(ints = {2, 3, 5, 7, 11})` -> all are prime
-- `@ParameterizedTest @ValueSource(ints = {4, 6, 8, 9, 12})` -> all are not prime
-- `@ParameterizedTest @ValueSource(ints = {-10, -1, 0, 1})` -> throws `IllegalNumberException`
-- `@ParameterizedTest @CsvFileSource(resources = "/data.csv", numLinesToSkip = 1)`
-  - `data.csv` contains: `number,digitsSum`
-  - Example row: `1234,10` -> assert `digitsSum(1234) == 10`
+3. **In-Memory Database for Testing (HSQLDB)**
+   - Testing against production databases (like PostgreSQL) is slow, fragile, and requires network setup.
+   - Embedded databases run inside the JVM process, spin up in milliseconds, and reset between tests.
 
-### Exercise 01 – Embedded HSQLDB DataSource
-**Goal:** Use an in-memory database (HSQLDB) for tests instead of a heavy DB.
+4. **Repository Testing (CRUD Verification)**
+   - Verifying all standard operations (`findAll`, `findById`, `save`, `update`, `delete`) against real SQL execution in memory.
 
-**Files:**
-- `schema.sql` defines the product table structure (columns: `id`, `name`, `price`)
-- `data.sql` inserts at least 5 product rows
+5. **Test Doubles & Mocking (Mockito)**
+   - Isolating the unit under test (the Service layer) from its dependencies (the Repository).
+   - Stubs: Simulating dependency behavior with pre-canned answers.
+   - Spies & Verification: Confirming that expected methods were called with expected arguments.
 
-**Test class:** `EmbeddedDataSourceTest`
-- Use `EmbeddedDatabaseBuilder` (Spring JDBC) with `schema.sql` and `data.sql`
-- In `@BeforeEach`, build a new in-memory DB for a clean state per test
-- Test that `dataSource.getConnection()` returns a non-null connection
+---
 
-### Exercise 02 – ProductsRepository (JDBC + Integration Tests)
-**Goal:** Implement a JDBC repository and test it using the embedded HSQLDB.
+## Why These Concepts Are Important
 
-**Interface:** `ProductsRepository`
-- `List<Product> findAll()`
-- `Optional<Product> findById(Long id)`
-- `void update(Product product)`
-- `void save(Product product)`
-- `void delete(Long id)`
+- **Confidence & Refactoring**: Automated test suites allow developers to refactor with confidence that existing features will not break.
+- **Speed & Portability**: CI/CD pipelines run thousands of tests on clean runner environments where installing heavy DBMS software is impractical. Embedded DBs and mocks make tests fast and self-contained.
+- **Boundary Separation**: If a service test fails, you want to know immediately whether the service logic failed, not whether a database connection dropped. Mocking isolates the fault domain.
 
-**Implementation highlights:** `ProductsRepositoryJdbcImpl`
-- Uses the `DataSource` from Exercise 01
-- Standard JDBC pattern with try-with-resources
+---
 
-```java
-try (Connection con = dataSource.getConnection();
-     PreparedStatement ps = con.prepareStatement(SQL)) {
-    // bind params
-    // execute
-}
-```
+## Main Exercises Covered
 
-**SQL examples (concept):**
-- `findAll`: `SELECT id, name, price FROM product`
-- `findById`: `SELECT id, name, price FROM product WHERE id = ?`
-- `update`: `UPDATE product SET name = ?, price = ? WHERE id = ?`
-- `save`: `INSERT INTO product (name, price) VALUES (?, ?)` with `RETURN_GENERATED_KEYS`
-- `delete`: `DELETE FROM product WHERE id = ?`
+| Exercise | Name | Testing Level | Technologies & Tools |
+| :--- | :--- | :--- | :--- |
+| **ex00** | First Tests | Unit Testing (Algorithmic) | JUnit 5, `@ParameterizedTest`, `@ValueSource`, `@CsvFileSource`, CSV parsing |
+| **ex01** | Embedded DataBase | Integration Testing (Setup) | Spring JDBC `EmbeddedDatabaseBuilder`, HSQLDB, `@BeforeEach` |
+| **ex02** | Test for JDBC Repository | Integration Testing (Persistence) | JDBC CRUD, `ProductsRepositoryJdbcImpl`, Predefined test fixtures |
+| **ex03** | Test for Service | Unit Testing (Business Logic) | Mockito (`@Mock`, `@InjectMocks`), Stubbing (`when`), Verification (`verify`) |
 
-**Test class:** `ProductsRepositoryJdbcImplTest`
-- Rebuilds the embedded DB before each test
-- Predefined expected products, such as:
-  - `EXPECTEDFINDALLPRODUCTS`
-  - `EXPECTEDFINDBYIDPRODUCT`
-  - `EXPECTEDUPDATEDPRODUCT`
-- Tests: `testFindAll`, `testFindById`, `testUpdate`, `testSave`, `testDelete`
+---
 
-### Exercise 03 – UsersService + Mockito (Service-Level Unit Tests)
-**Goal:** Test business logic in `UsersServiceImpl` without touching a real database. Use Mockito to fake the repository.
+## What You Should Learn and Understand
 
-**Domain:**
-- `User`: `id`, `login`, `password`, `authenticated`
-- `UsersRepository`: `User findByLogin(String login)` (throws `EntityNotFoundException` if not found), `void update(User user)`
-- `AlreadyAuthenticatedException`: thrown when a user tries to authenticate but is already authenticated
+1. The difference between unit tests (isolated, fast) and integration tests (wiring components together).
+2. How to write parameterized tests in JUnit 5 to achieve high test coverage with minimal code duplication.
+3. How to use `EmbeddedDatabaseBuilder` to spin up an in-memory SQL database from `schema.sql` and `data.sql` before each test.
+4. How to verify that a repository correctly generates IDs and mutates database state.
+5. How and why to use Mockito to simulate repositories when testing business logic services.
 
-**Service:** `UsersServiceImpl`
-```java
-public class UsersServiceImpl {
-    private final UsersRepository usersRepository;
+---
 
-    public UsersServiceImpl(UsersRepository usersRepository) {
-        this.usersRepository = usersRepository;
-    }
+## How Concepts Are Used in My Implementation
 
-    public boolean authenticate(String login, String password) {
-        User user = usersRepository.findByLogin(login); // may throw EntityNotFoundException
+- **Data-Driven Unit Tests**: In `ex00`, `NumberWorkerTest` verifies primes, composites, and invalid inputs using `@ValueSource`, and tests digit sum calculations against `data.csv`.
+- **Database Reset per Test**: In `ex01` and `ex02`, `EmbeddedDataSourceTest` and `ProductsReposutoryJdbcImplTest` rebuild an HSQLDB instance before every test in `@BeforeEach`, guaranteeing zero cross-test interference.
+- **Full CRUD Verification**: In `ex02`, `ProductsRepositoryJdbcImplTest` compares database outputs against immutable constants (`EXPECTED_FIND_ALL_PRODUCTS`, etc.).
+- **Mock-Driven Service Testing**: In `ex03`, `UsersServiceImplTest` uses Mockito annotations (`@Mock`, `@InjectMocks`) to mock `UsersRepository` and verify that `usersRepository.update(user)` is executed when credentials match.
 
-        if (user.isAuthenticated()) {
-            throw new AlreadyAuthenticatedException(user.getLogin() + " already authenticated");
-        }
+---
 
-        if (user.getPassword().equals(password)) {
-            user.setAuthenticated(true);
-            usersRepository.update(user);
-            return true;
-        } else {
-            return false;
-        }
-    }
-}
-```
+## Module Directory Structure
 
-**Test class with Mockito:** `UsersServiceImplTest`
-```java
-@ExtendWith(MockitoExtension.class)
-public class UsersServiceImplTest {
-
-    @Mock
-    private UsersRepository usersRepository;
-
-    @InjectMocks
-    private UsersServiceImpl usersServiceImpl;
-
-    @Test
-    void testAuthenticateCorrectLoginAndPassword() {
-        User user = new User(1L, "oobbad", "hello123", false);
-
-        when(usersRepository.findByLogin("oobbad")).thenReturn(user);
-
-        boolean result = usersServiceImpl.authenticate("oobbad", "hello123");
-
-        assertTrue(result);
-        assertTrue(user.isAuthenticated());
-        verify(usersRepository).update(user);
-    }
-
-    // other tests: incorrect login, incorrect password...
-}
-```
-
-## Installation
-- Add JDK version requirement here
-- Add build tool requirement here (e.g., Maven version)
-
-## Setup Instructions
-1. Clone the repository
-2. Navigate to the module directory
-3. Add your build and test commands here
-
-## Environment Variables
-- None
-
-## Usage
-- Add how to run tests here
-- Add how to run exercises here
-
-## Folder Structure
-```
-.
+```text
+Module06/
+├── .gitignore
 ├── README.md
 ├── ex00/
+│   ├── README.md
 │   └── Tests/
 │       ├── pom.xml
 │       └── src/
-│           ├── main/
-│           │   └── java/
-│           │       └── fr.s42.numbers/
-│           │                   ├── IllegalNumberException.java
-│           │                   └── NumberWorker.java
+│           ├── main/java/fr/s42/numbers/ (NumberWorker, IllegalNumberException)
 │           └── test/
-│               ├── java/
-│               │   └── fr.s42.numbers/
-│               │               └── NumberWorkerTest.java
-│               └── resources/
-│                   └── data.csv
+│               ├── java/fr/s42/numbers/ (NumberWorkerTest)
+│               └── resources/ (data.csv)
 ├── ex01/
+│   ├── README.md
 │   └── Tests/
 │       ├── pom.xml
-│       └── src/
-│           ├── main/
-│           │   └── java/
-│           │       └── fr.s42.numbers/
-│           │                   ├── IllegalNumberException.java
-│           │                   └── NumberWorker.java
-│           └── test/
-│               ├── java/
-│               │   └── fr.s42/
-│               │           ├── numbers/
-│               │           │   └── NumberWorkerTest.java
-│               │           └── repositories/
-│               │               └── EmbeddedDataSourceTest.java
-│               └── resources/
-│                   ├── data.csv
-│                   ├── data.sql
-│                   └── schema.sql
+│       └── src/test/
+│           ├── java/fr/s42/repositories/ (EmbeddedDataSourceTest)
+│           └── resources/ (schema.sql, data.sql)
 ├── ex02/
+│   ├── README.md
 │   └── Tests/
 │       ├── pom.xml
 │       └── src/
-│           ├── main/
-│           │   └── java/
-│           │       └── fr.s42/
-│           │               ├── models/
-│           │               │   └── Product.java
-│           │               ├── numbers/
-│           │               │   ├── IllegalNumberException.java
-│           │               │   └── NumberWorker.java
-│           │               └── repositories/
-│           │                   ├── ProductsRepository.java
-│           │                   └── ProductsRepositoryJdbcImpl.java
-│           └── test/
-│               ├── java/
-│               │   └── fr.s42/
-│               │           ├── numbers/
-│               │           │   └── NumberWorkerTest.java
-│               │           └── repositories/
-│               │               ├── EmbeddedDataSourceTest.java
-│               │               └── ProductsReposutoryJdbcImplTest.java
-│               └── resources/
-│                   ├── data.csv
-│                   ├── data.sql
-│                   └── schema.sql
+│           ├── main/java/fr/s42/ (models/Product, repositories/ProductsRepository...)
+│           └── test/java/fr/s42/repositories/ (ProductsReposutoryJdbcImplTest)
 └── ex03/
+    ├── README.md
     └── Tests/
         ├── pom.xml
         └── src/
-            ├── main/
-            │   └── java/
-            │       └── fr.42/
-            │               ├── exceptions/
-            │               │   └── AlreadyAuthenticatedException.java
-            │               ├── models/
-            │               │   ├── Product.java
-            │               │   └── User.java
-            │               ├── numbers/
-            │               │   ├── IllegalNumberException.java
-            │               │   └── NumberWorker.java
-            │               ├── repositories/
-            │               │   ├── ProductsRepository.java
-            │               │   ├── ProductsRepositoryJdbcImpl.java
-            │               │   └── UsersRepository.java
-            │               └── services/
-            │                   └── UsersServiceImpl.java
-            └── test/
-                ├── java/
-                │   └── fr.s42/
-                │           ├── numbers/
-                │           │   └── NumberWorkerTest.java
-                │           ├── repositories/
-                │           │   ├── EmbeddedDataSourceTest.java
-                │           │   └── ProductsReposutoryJdbcImplTest.java
-                │           └── services/
-                │               └── UsersServiceImplTest.java
-                └── resources/
-                    ├── data.csv
-                    ├── data.sql
-                    └── schema.sql
+            ├── main/java/fr/s42/ (services/UsersServiceImpl, exceptions, models)
+            └── test/java/fr/s42/services/ (UsersServiceImplTest)
 ```
-
-## Deployment
-- Not applicable (educational module)
-
-## Screenshots
-![Learning flow animation](assets/learning-flow.svg)
-
-## Contributing
-- Add contribution guidelines here
-
-## License
-- Add license name or file reference here
-
-## Contact
-- Add maintainer or author contact here

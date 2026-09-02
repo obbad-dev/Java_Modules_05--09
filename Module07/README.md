@@ -1,379 +1,104 @@
-<img src="https://r2cdn.perplexity.ai/pplx-full-logo-primary-dark%402x.png" style="height:64px;margin-right:32px"/>
+# Java Module 07 – Reflection & Annotations
 
-# <span style="color:#4CAF50">Java Module 07 – Reflection & Annotations</span> 🚀
+## Overview
 
-***
+Java Module 07 explores **metaprogramming** in Java through two foundational technologies: the **Java Reflection API** (`java.lang.reflect`) and **Java Annotations** (both compile-time processing via `javax.annotation.processing` and runtime processing).
 
-## <span style="color:#2196F3">Module Overview</span> 📚
+Almost every major Java enterprise framework—such as **Spring Framework**, **Hibernate / JPA**, **Jackson**, and **JUnit**—relies on reflection and annotations to inspect classes dynamically, inject dependencies, map database tables, and execute tests without hardcoding class dependencies. This module demystifies that "framework magic" by having you build three progressively sophisticated mini-frameworks from scratch.
 
-Module 07 is all about **mastering Java reflection and annotations** by building three progressively more advanced mini-frameworks:
+---
 
-- A **runtime reflection console tool** (inspect classes, create objects, call methods).[^1]
-- A **compile-time annotation processor** that generates HTML forms from annotated classes.[^1]
-- A **mini ORM** that maps Java classes to SQL tables and generates `CREATE`, `INSERT`, `UPDATE`, `SELECT` statements at runtime.[^2][^1]
+## Main Programming Concepts Introduced
 
-By the end of this module, the repository showcases not just syntax knowledge, but the ability to design and implement **real-world framework-style code**.
+1. **The Java Reflection API (`java.lang.reflect`)**
+   - Inspecting class metadata at runtime: `Class<?>`, `Field`, `Method`, `Constructor`.
+   - Discovering declared members via `getDeclaredFields()` and `getDeclaredMethods()`.
+   - Bypassing Java access control checks dynamically using `setAccessible(true)`.
+   - Instantiating objects dynamically using `clazz.getDeclaredConstructor().newInstance()`.
+   - Dynamically invoking methods at runtime using `method.invoke(object, args)`.
 
-***
+2. **Annotation Types & Retention Policies**
+   - Creating custom annotations using `@interface`.
+   - `RetentionPolicy.SOURCE`: Annotations retained only in source code and discarded by the compiler; processed by compile-time annotation processors.
+   - `RetentionPolicy.RUNTIME`: Annotations preserved in bytecode and accessible at runtime through reflection (`element.getAnnotation(...)`).
 
-## <span style="color:#9C27B0">Project Structure</span> 🧱
+3. **Compile-Time Annotation Processing (APT)**
+   - Extending `javax.annotation.processing.AbstractProcessor`.
+   - Hooking into the Java compiler (`javac`) lifecycle to inspect syntax trees (`TypeElement`, `Element`).
+   - Using the Java `Filer` API to generate artifacts (such as HTML forms) at build time without runtime overhead.
+   - Service Provider Interface (SPI) discovery using Google AutoService (`@AutoService(Processor.class)`).
 
-```bash
+4. **Object-Relational Mapping (ORM) Engine Design**
+   - Bridging domain models and SQL using annotations (`@OrmEntity`, `@OrmColumn`, `@OrmColumnId`).
+   - Dynamically generating Data Definition Language (`CREATE TABLE`, `DROP TABLE`) and Data Manipulation Language (`INSERT`, `UPDATE`, `SELECT`) queries at runtime based on entity reflection.
+
+---
+
+## Why These Concepts Are Important
+
+- **Decoupling & Inversion of Control**: Reflection enables programs to instantiate and wire components whose concrete types were not known when the code was compiled.
+- **Zero-Boilerplate Code Generation**: Compile-time annotation processing automates tedious tasks (generating DTOs, mappers, HTML templates, serialization logic) during `mvn compile` with zero runtime performance cost.
+- **Understanding Enterprise Frameworks**: Frameworks like Spring and Hibernate are no longer black boxes. You understand exactly how `@Entity` maps to a table, how `@Autowired` injects fields, and how frameworks call methods dynamically.
+
+---
+
+## Main Exercises Covered
+
+| Exercise | Name | Domain | Key Concepts & Deliverables |
+| :--- | :--- | :--- | :--- |
+| **ex00** | Work with Classes | Runtime Reflection | Interactive CLI inspecting `classes.User` and `classes.Car`, dynamic instantiation, field modification, method invocation |
+| **ex01** | Annotations - SOURCE | Compile-Time Processing | `@HtmlForm`, `@HtmlInput`, `HtmlProcessor extends AbstractProcessor`, AutoService, HTML generation in `target/classes/` |
+| **ex02** | ORM | Runtime ORM Engine | Custom ORM annotations (`@OrmEntity`, `@OrmColumn`, `@OrmColumnId`), `OrmManager` (DDL & DML SQL generator) |
+
+---
+
+## What You Should Learn and Understand
+
+1. How the JVM represents classes in memory as `Class<?>` objects.
+2. How to dynamically inspect fields and methods, read parameter types, and handle type casting.
+3. How `setAccessible(true)` modifies access checks on private fields and methods.
+4. How compile-time annotation processors work during Maven build phases, and how `Filer` outputs generated resources.
+5. How an ORM engine inspects class annotations and fields to generate schema DDL (`CREATE TABLE`) and queries (`INSERT`, `UPDATE`, `SELECT`) dynamically.
+
+---
+
+## How Concepts Are Used in My Implementation
+
+- **Interactive CLI with Reflection**: In `ex00`, `app.Program` asks the user for a class name in the `classes` package, lists its fields and methods, prompts for values to create an instance via constructor reflection, updates private fields by name, and executes user-specified methods with parsed arguments.
+- **Compiler Hook via AutoService**: In `ex01`, `HtmlProcessor` registers with `javac` using `@AutoService(Processor.class)`. When `mvn clean compile` runs, it scans `@HtmlForm` classes (like `UserForm`), parses `@HtmlInput` field annotations, and generates a formatted HTML form in `target/classes/user_form.html`.
+- **Mini ORM Engine**: In `ex02`, `OrmManager` checks `@OrmEntity` and `@OrmColumn` annotations on `models.User` to generate SQL for table creation with appropriate column types (`VARCHAR`, `INT`, `BIGINT`, `BOOLEAN`), `save()` for inserts, `update()` for modifying records by primary key, and `findById()` for dynamic select queries.
+
+---
+
+## Module Directory Structure
+
+```text
 Module07/
+├── .gitignore
+├── README.md
 ├── ex00/
-│   └── Reflection/               # Core reflection console app
+│   ├── README.md
+│   └── Reflection/
 │       ├── pom.xml
 │       └── src/main/java/
 │           ├── app/Program.java
-│           └── classes/
-│               ├── Car.java
-│               └── User.java
-│
+│           └── classes/ (User.java, Car.java)
 ├── ex01/
-│   └── Annotations/              # HtmlForm / HtmlInput + HtmlProcessor
+│   ├── README.md
+│   └── Annotations/
 │       ├── pom.xml
 │       └── src/main/java/
-│           ├── annotations/
-│           │   ├── HtmlForm.java
-│           │   └── HtmlInput.java
+│           ├── annotations/ (HtmlForm.java, HtmlInput.java)
 │           ├── forms/UserForm.java
 │           └── processor/HtmlProcessor.java
-│
-├── ex02/
-│   └── ORM/
-│       ├── pom.xml
-│       └── src/main/java/
-│           ├── annotations/
-│           │   ├── OrmEntity.java    # @OrmEntity(table = ...)
-│           │   ├── OrmColumn.java    # @OrmColumn(name = ..., length = ...)
-│           │   └── OrmColumnId.java  # @OrmColumnId
-│           ├── models/
-│           │   └── User.java         # Example mapped entity
-│           ├── app/
-│           │   └── Main.java
-│           └── manager/
-│               └── OrmManager.java   # buildCreateTableSql, save, update, findById
-│
-└── README.md                     # You are here ✨
+└── ex02/
+    ├── README.md
+    └── ORM/
+        ├── .gitignore
+        ├── pom.xml
+        └── src/main/java/
+            ├── annotations/ (OrmEntity.java, OrmColumn.java, OrmColumnId.java)
+            ├── models/User.java
+            ├── manager/OrmManager.java
+            └── app/Main.java
 ```
-
-
-***
-
-## <span style="color:#FF9800">Exercise 00 – Work with Classes</span> 🔍
-
-
-### 🎯 Goal
-
-Build a **reflection-driven console application** that:
-
-- Lists classes from a `classes` package.
-- Shows their fields and methods.
-- Lets the user create an instance, modify a field, and call a method **at runtime** using reflection.[^1]
-
-
-### 🗺 Structural Map
-
-Main pieces (typical layout inside `ex00/Reflection`):
-
-- `classes/`
-    - `User.java`, `Car.java`, etc. – simple POJOs with constructors, fields, methods, `toString()`.[^1]
-- `app/Program.java`
-    - Entry point; uses reflection to:
-        - Load a class by name.
-        - Inspect fields and methods.
-        - Construct instances and invoke methods.
-
-Interaction:
-
-1. `Program` reads user input → class name (`User`).
-2. Uses `Class.forName("...")` or package-based discovery to get the `Class<?>`.
-3. Uses `getDeclaredFields()` and `getDeclaredMethods()` to display metadata.
-4. Uses constructors and `Field` / `Method` APIs to create and manipulate an instance.[^1]
-
-### 🧠 Deep Dive – New Concepts
-
-- **Runtime Reflection Basics**
-    - `Class<?>`, `Field`, `Method`, constructors.
-    - `getDeclaredFields()`, `getDeclaredMethods()`, `getDeclaredConstructor(...)`.[^1]
-- **Accessing Private Members**
-    - `field.setAccessible(true)` and `method.setAccessible(true)` to read/write private fields and call private methods when needed.
-- **Dynamic Invocation**
-    - `constructor.newInstance(args...)` to create objects dynamically.
-    - `method.invoke(instance, args...)` to call methods chosen by the user at runtime.
-
-This mirrors what frameworks like **Spring** and **JUnit** do under the hood when they “discover” and operate on your classes dynamically.[^3]
-
-### ▶️ How to Run
-
-From `ex00/`:
-
-```bash
-# Compile
-mvn clean compile
-
-# Run (adjust main class/package as needed)
-mvn exec:java -Dexec.mainClass="app.Program"
-```
-
-During execution you should see a flow similar to the subject example: choose class → show fields/methods → create object → edit field → call method.[^1]
-
-***
-
-## <span style="color:#3F51B5">Exercise 01 – Annotations-SOURCE</span> 🧾
-
-
-### 🎯 Goal
-
-Create a **compile-time annotation processor** (`HtmlProcessor`) that:
-
-- Reads custom annotations `@HtmlForm` and `@HtmlInput` on a class.
-- Generates an HTML form file (e.g. `userform.html`) in the target directory when you run `mvn clean compile`.[^1]
-
-
-### 🗺 Structural Map
-
-Inside `ex01/Annotations`:
-
-- `annotations/`
-    - `HtmlForm.java` – annotation with `fileName`, `action`, `method` and `RetentionPolicy.SOURCE`.
-    - `HtmlInput.java` – annotation with `type`, `name`, `placeholder`.[^1]
-- `forms/`
-    - `UserForm.java` – a class annotated with `@HtmlForm` and `@HtmlInput` on fields.[^1]
-- `processor/`
-    - `HtmlProcessor.java` – extends `AbstractProcessor` and implements the logic to scan annotated elements and generate HTML via `Filer`.
-
-Interaction:
-
-- `mvn clean compile` triggers the annotation processor.
-
-- The processor finds all `@HtmlForm` classes, inspects their `@HtmlInput` fields, and writes an HTML file with `<form>` and `<input>` tags.[^1]
-
-
-### 🧠 Deep Dive – New Concepts
-
-- **Compile-Time Annotation Processing**
-    - Annotations with `RetentionPolicy.SOURCE` are visible only to the compiler and processors, not at runtime.[^1]
-    - Extending `AbstractProcessor`, overriding `process`, using `RoundEnvironment` and `TypeElement`.
-- **Code / File Generation at Build Time**
-    - Using `Filer` to create new files in `target` (e.g., HTML templates from Java metadata).
-    - Decoupling “metadata” (annotations) from generated artifacts (HTML).
-- **Separation of Concerns**
-    - The annotated class (`UserForm`) describes the form.
-    - The processor builds the HTML.
-    - The business code never directly touches HTML string concatenation.
-
-This is the same pattern major frameworks use (e.g., MapStruct, Dagger, Lombok style tools).[^3]
-
-### ▶️ How to Run
-
-From `ex01/`:
-
-```bash
-# Compile and trigger annotation processor
-mvn clean compile
-```
-
-After compilation:
-
-- Check `target/classes` (or processor output directory) for `userform.html`.
-
-- Open it in a browser; it should have a `<form>` with `<input>` elements matching the annotations on `UserForm`.[^1]
-
-
-***
-
-## <span style="color:#E91E63">Exercise 02 – ORM</span> 🗄️
-
-
-### 🎯 Goal
-
-Implement a **tiny ORM framework** that:
-
-- Uses runtime annotations to map Java classes to database tables.
-- Generates SQL strings for:
-    - `CREATE TABLE` (on initialization).
-    - `INSERT` (`save`).
-    - `UPDATE` (`update`).
-    - `SELECT ... WHERE id = ?` (`findById`).[^2][^1]
-
-
-### 🗺 Structural Map
-
-Inside `ex02/ORM`:
-
-- `annotations/`
-    - `OrmEntity.java` – `@OrmEntity(table = "...")`.[^4]
-    - `OrmColumn.java` – `@OrmColumn(name = "...", length = ...)`.[^5]
-    - `OrmColumnId.java` – marks the primary key field.[^6]
-- `models/`
-    - `User.java` – example mapped entity:
-
-```java
-@OrmEntity(table = "simple_user")
-public class User {
-    @OrmColumnId
-    private Long id;
-
-    @OrmColumn(name = "first_name", length = 10)
-    private String firstName;
-
-    @OrmColumn(name = "last_name", length = 10)
-    private String lastName;
-
-    @OrmColumn(name = "age")
-    private Integer age;
-}
-```
-
-
-[^7]
-
-- `manager/`
-    - `OrmManager.java` – main ORM engine:
-        - `buildCreateTableSql(Class<?>)`
-        - `save(Object entity)`
-        - `update(Object entity)`
-        - `<T> T findById(Long id, Class<T> aClass)`
-
-
-### 🧠 Deep Dive – New Concepts
-
-- **Runtime Mapping via Annotations**
-    - `@OrmEntity` provides the table name.[^4][^7]
-    - `@OrmColumnId` marks the primary key (auto-increment in SQL).[^6]
-    - `@OrmColumn` describes each normal column: name and optional length.[^5]
-- **Type Mapping (Java → SQL)**
-    - `String` → `VARCHAR(length)`
-    - `Integer` / `int` → `INT`
-    - `Long` / `long` → `BIGINT`
-    - `Boolean` / `boolean` → `BOOLEAN`
-    - `Double` → `DOUBLE`[^2]
-- **SQL Generation Patterns**
-    - `buildCreateTableSql`
-        - Iterate all fields; build column definitions based on annotations and field type.
-        - Produce:
-
-```sql
-DROP TABLE IF EXISTS simple_user;
-CREATE TABLE simple_user (
-    id BIGINT PRIMARY KEY AUTOINCREMENT,
-    first_name VARCHAR(10),
-    last_name VARCHAR(10),
-    age INT
-);
-```
-
-
-[^2]
-
-- `save(Object entity)`
-    - Collect all `@OrmColumn` fields and their values.
-    - Generate:
-
-```sql
-INSERT INTO simple_user (first_name, last_name, age)
-VALUES ('Alice', 'Smith', 25);
-```
-
-- `update(Object entity)`
-    - Use `@OrmColumnId` field for `WHERE`.
-    - Set each `@OrmColumn` column, even if Java field is `null` → `column = NULL`.[^1]
-
-```sql
-UPDATE simple_user
-SET first_name = 'Bob',
-    last_name = 'Brown',
-    age = NULL
-WHERE id = 5;
-```
-
-- `findById(Long id, Class<T> aClass)`
-    - Build a full `SELECT` including id and all `@OrmColumn`s:
-
-```sql
-SELECT id, first_name, last_name, age
-FROM simple_user
-WHERE id = 5;
-```
-
-
-[^8][^7][^2]
-
-This mirrors how real ORMs (e.g., Hibernate) use metadata + reflection to stay independent of particular DBMS implementations.[^9]
-
-### ▶️ How to Run
-
-From `ex02/`:
-
-```bash
-# Compile
-mvn clean compile
-
-# Run (adjust main class/package)
-mvn exec:java -Dexec.mainClass="app.Main"
-```
-
-In a typical `Main`:
-
-- Instantiate `OrmManager`.
-- Call `buildCreateTableSql(User.class)` and print SQL.[^2]
-- Create a `User`, call `save(user)` and `update(user)` and `findById(1L, User.class)`; verify the printed SQL matches expectations.[^7][^2]
-
-***
-
-## <span style="color:#00BCD4">Progress \& Status</span> ✅
-
-Badges you might add to the repo:
-
-- 
-- 
-- 
-
-Suggested progress checklist:
-
-- [x] Exercise 00 – Reflection console tool
-- [x] Exercise 01 – HTML annotation processor
-- [x] Exercise 02 – Mini ORM with SQL generation
-- [ ] Optional – Real DB integration (JDBC)
-- [ ] Optional – ResultSet → Object mapping with reflection
-
-***
-
-## <span style="color:#795548">Technical Requirements</span> ⚙️
-
-- **Java:** Latest LTS (e.g., Java 17) as required by the subject.[^1]
-- **Build Tool:** Maven
-    - Proper `maven-compiler-plugin` config for annotation processing in `ex01`.[^1]
-- **Runtimes:**
-    - Must be runnable on standard JVM and GraalVM according to the subject rules.[^1]
-- **Dependencies (suggested):**
-    - `auto-service` (for `@AutoService(Processor.class)` in `ex01`).[^1]
-    - JUnit (optional, for your own tests).
-
-***
-
-This README is designed to be the **front page of your GitHub repo**, showing that you understand not just *what* the exercises do, but *why* they exist and how they connect to real-world frameworks.
-
-To tune this even better for you: which section do you want expanded with concrete code snippets next time you refer back (reflection console in ex00, annotation processor in ex01, or ORM manager in ex02)?
-
-<div align="center">⁂</div>
-
-[^1]: en.subject.pdf
-
-[^2]: OrmManager.java
-
-[^3]: https://jenkov.com/tutorials/java-reflection/annotations.html
-
-[^4]: OrmEntity.java
-
-[^5]: OrmColumn.java
-
-[^6]: OrmColumnId.java
-
-[^7]: User.java
-
-[^8]: https://stackoverflow.com/questions/69707257/how-can-i-write-a-sql-query-to-display-id-first-name-last-name-of-all-players
-
-[^9]: https://docs.hibernate.org/orm/4.2/devguide/en-US/html/ch13.html
-
