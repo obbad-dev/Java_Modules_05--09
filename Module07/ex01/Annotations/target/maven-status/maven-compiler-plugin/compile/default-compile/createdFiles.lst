@@ -1,5 +1,0 @@
-META-INF/services/javax.annotation.processing.Processor
-annotations/HtmlInput.class
-forms/UserForm.class
-annotations/HtmlForm.class
-processor/HtmlProcessor.class
