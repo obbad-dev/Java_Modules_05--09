@@ -1,7 +1,0 @@
-/home/oobbad/Documents/pool_java_part2/Module05/ex03/Chat/src/main/java/fr/s42/chat/app/Program.java
-/home/oobbad/Documents/pool_java_part2/Module05/ex03/Chat/src/main/java/fr/s42/chat/exceptions/NotSavedSubEntityException.java
-/home/oobbad/Documents/pool_java_part2/Module05/ex03/Chat/src/main/java/fr/s42/chat/models/Chatroom.java
-/home/oobbad/Documents/pool_java_part2/Module05/ex03/Chat/src/main/java/fr/s42/chat/models/Message.java
-/home/oobbad/Documents/pool_java_part2/Module05/ex03/Chat/src/main/java/fr/s42/chat/models/User.java
-/home/oobbad/Documents/pool_java_part2/Module05/ex03/Chat/src/main/java/fr/s42/chat/repositories/MessagesRepository.java
-/home/oobbad/Documents/pool_java_part2/Module05/ex03/Chat/src/main/java/fr/s42/chat/repositories/MessagesRepositoryJdbcImpl.java
