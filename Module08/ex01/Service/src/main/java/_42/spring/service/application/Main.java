@@ -28,20 +28,6 @@ public class Main {
         UsersRepository usersRepository = new UsersRepositoryJdbcImpl(dataSource);
         UsersRepository usersRepository1 = new UsersRepositoryJdbcTemplateImpl(new JdbcTemplate(dataSource));
 
-        // plain jdbc
-
-//            us.ifPresentOrElse(new Consumer<User>() {
-//                                   @Override
-//                                   public void accept(User user) {
-//                                       System.out.println("user added success: " + user);
-//                                   }
-//                               }, new Runnable() {
-//                                   @Override
-//                                   public void run() {
-//                                       System.out.println("user not found");
-//                                   }
-//                               }
-//            );
         try {
 
             User user = new User(null, "hassan@gmail.com");

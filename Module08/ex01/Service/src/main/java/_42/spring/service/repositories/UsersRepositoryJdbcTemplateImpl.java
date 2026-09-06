@@ -11,29 +11,14 @@ import java.util.List;
 import java.util.Optional;
 import _42.spring.service.models.*;
 
-public class UsersRepositoryJdbcTemplateImpl implements UsersRepository{
-
+public class UsersRepositoryJdbcTemplateImpl implements UsersRepository
+{
     private final JdbcTemplate jdbcTemplate;
 
     private RowMapper<User> rowMapper = (rs, numRows) -> (
             new User(rs.getLong("id"), rs.getString("email"))
     );
 
-//    private RowMapper rowMapper = (rs, rowNum) -> {
-//            User user = new User();
-//            user.setId(rs.getLong("id"));
-//            user.setEmail(rs.getString("email"));
-//            return user;
-//        };
-//    private RowMapper rowMapper = new RowMapper() {
-//        @Override
-//        public User mapRow(ResultSet rs, int rowNum) throws SQLException {
-//            User user = new User();
-//            user.setId(rs.getLong("id"));
-//            user.setEmail(rs.getString("email"));
-//            return user;
-//        }
-//    };
     public UsersRepositoryJdbcTemplateImpl(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
@@ -49,7 +34,7 @@ public class UsersRepositoryJdbcTemplateImpl implements UsersRepository{
 
     @Override
     public User findById(Long id) {
-
+        String QUERY = "SELECT (id, email) FROM users WHERE id = ?";
         return null;
     }
 
