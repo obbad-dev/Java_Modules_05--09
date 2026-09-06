@@ -1,3 +1,5 @@
-INSERT INTO users (id, email)
+INSERT INTO users (email)
     VALUES
-    (1, 'oualidobbad@gmail.com');
+    ('oualidobbad@gmail.com'),
+    ('user2@domain.com'),
+    ('user3@domain.com');

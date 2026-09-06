@@ -1,9 +1,12 @@
 package _42.spring.service.repositories;
 
 import _42.spring.service.models.User;
+import org.jspecify.annotations.Nullable;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 import _42.spring.service.models.*;
@@ -12,27 +15,41 @@ public class UsersRepositoryJdbcTemplateImpl implements UsersRepository{
 
     private final JdbcTemplate jdbcTemplate;
 
-//    private RowMapper rowMapper = (rs, numRows) -> (
-//            new User(rs.getLong("id"), rs.getString("email"))
-//    );
+    private RowMapper<User> rowMapper = (rs, numRows) -> (
+            new User(rs.getLong("id"), rs.getString("email"))
+    );
 
-    private RowMapper rowMapper = (rs, rowNum) -> (
-            User user = new User();
-            user.setId(rs.getLong("id"));
-            user.setEmail(rs.getString("email"));
-            );
+//    private RowMapper rowMapper = (rs, rowNum) -> {
+//            User user = new User();
+//            user.setId(rs.getLong("id"));
+//            user.setEmail(rs.getString("email"));
+//            return user;
+//        };
+//    private RowMapper rowMapper = new RowMapper() {
+//        @Override
+//        public User mapRow(ResultSet rs, int rowNum) throws SQLException {
+//            User user = new User();
+//            user.setId(rs.getLong("id"));
+//            user.setEmail(rs.getString("email"));
+//            return user;
+//        }
+//    };
     public UsersRepositoryJdbcTemplateImpl(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override
     public Optional<User> findByEmail(String email) {
+        String sql = "SELECT * FROM users WHERE email = ?";
 
-        return jdbcTemplate.;
+        return jdbcTemplate.query(sql, rowMapper, email)
+                .stream()
+                .findFirst();
     }
 
     @Override
     public User findById(Long id) {
+
         return null;
     }
 
