@@ -91,7 +91,7 @@ public class UsersRepositoryJdbcImpl implements UsersRepository{
                 }
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Error executing save", e);
+            new RuntimeException("Error executing save", e);
         }
     }
 
