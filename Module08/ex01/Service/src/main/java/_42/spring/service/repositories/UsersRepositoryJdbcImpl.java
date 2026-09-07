@@ -77,21 +77,21 @@ public class UsersRepositoryJdbcImpl implements UsersRepository{
     public void save(User entity) {
         String query = "INSERT INTO users (email) VALUES (?)";
 
-        // 1. Tell JDBC to retrieve the generated ID key
+        // Tell JDBC to retrieve the generated ID key
         try (Connection con = dataSource.getConnection();
              PreparedStatement st = con.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
 
             st.setString(1, entity.getEmail());
             st.executeUpdate();
 
-            // 2. Extract the generated ID and assign it to the entity
+            // Extract the generated ID and assign it to the entity
             try (ResultSet generatedKeys = st.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
                     entity.setId(generatedKeys.getLong(1));
                 }
             }
         } catch (SQLException e) {
-            new RuntimeException("Error executing save", e);
+            throw new RuntimeException("Error executing save", e);
         }
     }
 

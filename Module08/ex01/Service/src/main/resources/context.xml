@@ -23,16 +23,12 @@
         <property name="password" value="${db.password}"/>
     </bean>
 
-    <bean id="userRepositoryJdbc" class="_42.spring.service.repositories.UsersRepositoryJdbcImpl">
-        <constructor-arg ref="driverManagerDataSource"></constructor-arg>
-    </bean>
+    <bean id="usersRepositoryJdbc" class="_42.spring.service.repositories.UsersRepositoryJdbcImpl">                                                                      
+        <constructor-arg ref="driverManagerDataSource"/>                                                                                                                 
+    </bean>                                                                                                                                                              
+                                                                                                                                                                         
+    <bean id="usersRepositoryJdbcTemplate" class="_42.spring.service.repositories.UsersRepositoryJdbcTemplateImpl">                                                      
+        <constructor-arg ref="hikariDataSource"/>                                                                                                                        
+    </bean> 
 
-    <bean id="userRepositoryTemplateJdbc" class="_42.spring.service.repositories.UsersRepositoryJdbcTemplateImpl">
-        <constructor-arg ref="hikariDataSource"></constructor-arg>
-    </bean>
-
-    <bean id="userTest" class="_42.spring.service.models.User">
-        <constructor-arg name="id"><null/></constructor-arg>
-        <constructor-arg name="email" value="JDBC@Template"></constructor-arg>
-    </bean>
 </beans>
