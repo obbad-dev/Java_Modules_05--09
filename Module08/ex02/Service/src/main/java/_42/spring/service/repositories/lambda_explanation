@@ -1,0 +1,46 @@
+IMPLEMENTATION WITH LAMBDA
+
+    private RowMapper<User> rowMapper = (rs, numRows) -> (
+            new User(rs.getLong("id"), rs.getString("email"))
+    );
+
+    private RowMapper rowMapper = (rs, rowNum) -> {
+            User user = new User();
+            user.setId(rs.getLong("id"));
+            user.setEmail(rs.getString("email"));
+            return user;
+        };
+
+IMPLEMENTATION INSIDE A CLASS
+    private RowMapper rowMapper = new RowMapper() {
+        @Override
+        public User mapRow(ResultSet rs, int rowNum) throws SQLException {
+            User user = new User();
+            user.setId(rs.getLong("id"));
+            user.setEmail(rs.getString("email"));
+            return user;
+        }
+    };
+
+            us.ifPresentOrElse(new Consumer<User>() {
+                                   @Override
+                                   public void accept(User user) {
+                                       System.out.println("user added success: " + user);
+                                   }
+                               }, new Runnable() {
+                                   @Override
+                                   public void run() {
+                                       System.out.println("user not found");
+                                   }
+                               }
+            );
+
+us.ifPresentOrElse(
+        (user1 -> System.out.println("user added success: " + user1)),
+        () -> System.out.println("user not found")
+);
+
+
+
+
+
