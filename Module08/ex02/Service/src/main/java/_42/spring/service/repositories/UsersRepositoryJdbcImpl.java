@@ -3,16 +3,23 @@ package _42.spring.service.repositories;
 import _42.spring.service.models.User;
 
 import javax.sql.DataSource;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Repository;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+@Repository("usersRepositoryJdbc")
 public class UsersRepositoryJdbcImpl implements UsersRepository{
 
     private DataSource dataSource;
 
-    public  UsersRepositoryJdbcImpl(DataSource dataSource) {
+    @Autowired
+    public  UsersRepositoryJdbcImpl(@Qualifier ("driverManagerDataSource") DataSource dataSource) {
         this.dataSource = dataSource;
     }
     @Override
@@ -25,10 +32,8 @@ public class UsersRepositoryJdbcImpl implements UsersRepository{
             st.setString(1, email);
             try(ResultSet rs = st.executeQuery())
             {
-                if (rs.next())
-                {
-                    User user = new User(rs.getLong("id"), rs.getString("email"));
-                    return Optional.of(user);
+                if (rs.next()){
+                    return Optional.of(new User(rs.getLong("id"), rs.getString("email"), rs.getString("password")));
                 }
             }
         } catch (SQLException e) {
@@ -46,7 +51,7 @@ public class UsersRepositoryJdbcImpl implements UsersRepository{
              st.setLong(1, id);
             try (ResultSet rs = st.executeQuery()) {
                 if (rs.next()) {
-                    return new User(rs.getLong("id"), rs.getString("email"));
+                    return new User(rs.getLong("id"), rs.getString("email"), rs.getString("password"));
                 }
             }
         } catch (SQLException e) {
@@ -65,7 +70,7 @@ public class UsersRepositoryJdbcImpl implements UsersRepository{
              ResultSet rs = st.executeQuery()) {
 
             while (rs.next()) {
-                users.add(new User(rs.getLong("id"), rs.getString("email")));
+                users.add(new User(rs.getLong("id"), rs.getString("email"), rs.getString("password")));
             }
             return users;
         } catch (SQLException e) {
@@ -75,13 +80,14 @@ public class UsersRepositoryJdbcImpl implements UsersRepository{
 
     @Override
     public void save(User entity) {
-        String query = "INSERT INTO users (email) VALUES (?)";
+        String query = "INSERT INTO users (email, password) VALUES (?, ?)";
 
         // Tell JDBC to retrieve the generated ID key
         try (Connection con = dataSource.getConnection();
              PreparedStatement st = con.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
 
             st.setString(1, entity.getEmail());
+            st.setString(2, entity.getPassword());
             st.executeUpdate();
 
             // Extract the generated ID and assign it to the entity
@@ -97,11 +103,12 @@ public class UsersRepositoryJdbcImpl implements UsersRepository{
 
     @Override
     public void update(User entity) {
-        String QUERY = "UPDATE users SET email = ? WHERE id = ?";
+        String QUERY = "UPDATE users SET email = ?, password = ? WHERE id = ?";
         try (Connection con = dataSource.getConnection();
              PreparedStatement st = con.prepareStatement(QUERY)) {
             st.setString(1, entity.getEmail());
-            st.setLong(2, entity.getId());
+            st.setString(2, entity.getPassword());
+            st.setLong(3, entity.getId());
             st.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Error executing update", e);

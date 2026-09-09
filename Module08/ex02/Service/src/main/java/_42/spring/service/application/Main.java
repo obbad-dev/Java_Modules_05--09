@@ -3,7 +3,6 @@ package _42.spring.service.application;
 import _42.spring.service.config.ApplicationConfig;
 import _42.spring.service.repositories.UsersRepository;
 
-
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 public class Main {

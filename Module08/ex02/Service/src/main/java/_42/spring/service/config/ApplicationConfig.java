@@ -1,13 +1,11 @@
 package _42.spring.service.config;
 
 
-import java.sql.DriverManager;
 
 import javax.sql.DataSource;
-import javax.xml.crypto.Data;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
@@ -15,11 +13,14 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import com.zaxxer.hikari.HikariDataSource;
 
 import _42.spring.service.repositories.UsersRepository;
-import _42.spring.service.repositories.UsersRepositoryJdbcImpl;
-import _42.spring.service.repositories.UsersRepositoryJdbcTemplateImpl;
+import _42.spring.service.services.UsersService;
+
 
 @Configuration
 @PropertySource("classpath:db.properties") 
+@ComponentScan (basePackageClasses = {
+    UsersRepository.class,
+    UsersService.class })
 public class ApplicationConfig {
 
     @Value("${db.url}")
@@ -34,7 +35,7 @@ public class ApplicationConfig {
     @Value("${db.driver.name}")
     private String driverName;
 
-    @Bean 
+    @Bean
     public DataSource hikariDataSource()
     {
         HikariDataSource hs = new HikariDataSource();
@@ -53,18 +54,5 @@ public class ApplicationConfig {
         dm.setPassword(password);
         dm.setDriverClassName(driverName);
         return dm;
-    }
-
-    @Bean
-    public UsersRepository usersRepositoryJdbc(){
-        UsersRepositoryJdbcImpl usersRepositoryJdbcImpl = 
-            new UsersRepositoryJdbcImpl(driverManagerDataSource());
-        return usersRepositoryJdbcImpl;
-    }
-    @Bean
-    public UsersRepository usersRepositoryJdbcTemplate(){
-        UsersRepositoryJdbcTemplateImpl usrRepJdbcTemImpl =
-            new UsersRepositoryJdbcTemplateImpl(hikariDataSource());
-        return usrRepJdbcTemImpl;
     }
 }
