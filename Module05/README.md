@@ -1,114 +1,410 @@
-# Java Module 05 – SQL / JDBC
+<div align="center">
 
-## Overview
+# 🐘 Java Module 05 – SQL & JDBC
 
-Java Module 05 introduces relational database management and persistence in Java using **PostgreSQL** and the **Java Database Connectivity (JDBC)** API.
+**Relational Database Modeling, Connection Pooling with HikariCP, DAO Pattern & Advanced CTE Pagination**
 
-Up to this point in the Piscine, Java applications stored state entirely in-memory using collections (`List`, `Map`, `Set`). In enterprise systems, state must be persistent, ACID-compliant, concurrent, and durable. This module guides you through building a persistent backend for a **Chat application**, covering the full spectrum from relational database schema design to advanced data access patterns.
-
----
-
-## Main Programming Concepts Introduced
-
-1. **Relational Database Modeling (DDL & DML)**
-   - Designing tables with primary keys (`SERIAL PRIMARY KEY`), foreign keys (`REFERENCES`), unique constraints, and junction tables for many-to-many relationships.
-   - Populating initial seed data using SQL script files (`schema.sql` and `data.sql`).
-
-2. **Object-Relational Impedance Mismatch**
-   - Bridging the gap between tabular relational data (rows, columns, foreign keys) and object-oriented memory graphs (classes, object references, `List<T>`).
-   - Redefining domain models (`User`, `Chatroom`, `Message`) with proper `equals()`, `hashCode()`, and `toString()`.
-
-3. **Data Access Object (DAO) / Repository Pattern**
-   - Decoupling high-level business logic from low-level database communication details.
-   - Using interfaces (`MessagesRepository`, `UsersRepository`) to define persistence contracts.
-
-4. **JDBC (Java Database Connectivity)**
-   - Interacting with the database driver using `java.sql.Connection`, `java.sql.PreparedStatement`, `java.sql.ResultSet`, and `java.sql.Timestamp`.
-   - Preventing SQL Injection vulnerabilities via parameterized queries.
-   - Safely managing database resources using modern `try-with-resources` blocks.
-
-5. **Connection Pooling with HikariCP**
-   - Understanding the overhead of creating raw TCP database connections per operation.
-   - Using `HikariDataSource` from `com.zaxxer.hikari` for high-performance connection pooling and reuse.
-
-6. **Advanced SQL & Pagination (PostgreSQL CTE)**
-   - Implementing single-query pagination (`LIMIT` and `OFFSET`) combined with PostgreSQL Common Table Expressions (`WITH PaginatedUsers AS (...)`).
-   - Solving the $N+1$ query problem by fetching entities and their multi-level dependencies in a single round-trip query.
+![Java](https://img.shields.io/badge/Java-25-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16+-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![JDBC](https://img.shields.io/badge/JDBC-4.2-007396?style=for-the-badge&logo=java&logoColor=white)
+![HikariCP](https://img.shields.io/badge/HikariCP-Connection_Pool-00C7B7?style=for-the-badge)
+![SQL](https://img.shields.io/badge/SQL-Postgres_CTE-F29111?style=for-the-badge&logo=datagrip&logoColor=white)
+![Maven](https://img.shields.io/badge/Maven-Build-C71A36?style=for-the-badge&logo=apachemaven&logoColor=white)
 
 ---
 
-## Why These Concepts Are Important
+*From In-Memory Collections → Relational Persistence → High-Performance Data Access*
 
-- **Persistence & Durability**: Without a database, all application state disappears when the JVM terminates. Relational databases provide durable, transactional storage.
-- **Security**: Using raw string concatenation to construct SQL queries exposes applications to SQL Injection attacks. `PreparedStatement` safely escapes input parameters.
-- **Resource Management**: Database connections consume socket descriptors and DBMS worker threads. Leaking connections will crash the database server. Connection pools limit and reuse open connections.
-- **Performance**: Executing separate SQL queries for each sub-entity in a loop causes catastrophic latency ($N+1$ queries). Learning to aggregate joined data in a single query is a core backend engineering skill.
+</div>
 
 ---
 
-## Main Exercises Covered
+## 📖 Overview
 
-| Exercise | Name | Focus | Key Deliverables |
-| :--- | :--- | :--- | :--- |
-| **ex00** | Tables and Entities | Relational modeling & Domain Entities | `schema.sql`, `data.sql`, `User`, `Chatroom`, `Message` |
-| **ex01** | Read / Find | Repository pattern & HikariCP connection pool | `MessagesRepository`, `MessagesRepositoryJdbcImpl.findById()`, `Program` |
-| **ex02** | Create / Save | Data insertion & Generated Keys retrieval | `save(Message)`, custom `NotSavedSubEntityException` |
-| **ex03** | Update | Full entity updates & SQL NULL handling | `update(Message)`, handling `null` timestamps via `Types.TIMESTAMP` |
-| **ex04** | Find All | Single-query pagination with CTE & Join mapping | `UsersRepository.findAll(int page, int size)` with PostgreSQL CTE |
+Java Module 05 transitions from temporary in-memory Java state (`List`, `Map`, `Set`) to durable, enterprise-grade relational database persistence using **PostgreSQL** and the standard **Java Database Connectivity (JDBC)** API.
 
----
+Through building the persistence tier for a real-time **Chat Application**, this module covers the full spectrum of data access engineering: relational schema design, the Object-Relational Impedance Mismatch, thread-safe connection pooling with **HikariCP**, defensive resource management with `try-with-resources`, and solving the notorious $N+1$ query problem using **PostgreSQL Common Table Expressions (CTE)**.
 
-## What You Should Learn and Understand
-
-1. How relational schemas (`One-to-Many`, `Many-to-Many`) translate to Java object references and collections.
-2. How to configure and manage a `HikariDataSource` connection pool.
-3. How `PreparedStatement` binds parameters and returns auto-generated keys (`Statement.RETURN_GENERATED_KEYS`).
-4. How to correctly handle nullable columns and convert between `java.sql.Timestamp` and `java.time.LocalDateTime`.
-5. How to write a CTE query in PostgreSQL to paginate parent rows while retrieving 1-to-many and many-to-many child rows, aggregating them in Java using a `LinkedHashMap`.
+> [!IMPORTANT]
+> Database connections are scarce OS resources bound to network sockets and DBMS worker threads. Writing leak-proof, parameterized, and pool-backed persistence code is the foundation of every production backend engineer's skillset.
 
 ---
 
-## How Concepts Are Used in My Implementation
+## 🗺️ Module Progression
 
-- **Data Models**: `User.java`, `Chatroom.java`, and `Message.java` represent chat entities with bidirectionality and overridden `equals()` and `hashCode()` based on primary key IDs.
-- **HikariCP**: Integrated across `ex01` to `ex04` using `HikariConfig` and `HikariDataSource` for thread-safe connection pooling.
-- **Defensive Error Handling**: Custom runtime exception `NotSavedSubEntityException` guards `save()` against unpersisted sub-entities.
-- **Null Safety in SQL**: The `update()` method in `ex03` explicitly checks if `message.getDateTime() == null` and uses `ps.setNull(4, java.sql.Types.TIMESTAMP)`.
-- **CTE Optimization**: In `ex04`, `UsersRepositoryJdbcImpl` runs a single `WITH PaginatedUsers AS (...)` query, mapping flat joined result rows into structured `User` objects with their `createdRooms` and `socializedRooms` collections.
+```mermaid
+flowchart LR
+    subgraph EX00["🟢 Exercise 00"]
+        A["Schema & Models\nschema.sql + data.sql"]
+        A1["Domain Entities\nUser, Chatroom, Message"]
+        A --> A1
+    end
+
+    subgraph EX01["🟡 Exercise 01"]
+        B["HikariCP Pool\nHikariDataSource"]
+        B1["MessagesRepository\nfindById(id)"]
+        B --> B1
+    end
+
+    subgraph EX02["🟠 Exercise 02"]
+        C["INSERT & Auto-Keys\nRETURN_GENERATED_KEYS"]
+        C1["Defensive Validation\nNotSavedSubEntityException"]
+        C --> C1
+    end
+
+    subgraph EX03["🔵 Exercise 03"]
+        D["UPDATE Operations\nFull Field Replacement"]
+        D1["SQL NULL Safety\nTypes.TIMESTAMP"]
+        D --> D1
+    end
+
+    subgraph EX04["🔴 Exercise 04"]
+        E["Advanced CTE Query\nWITH PaginatedUsers"]
+        E1["Single-Trip Join\nZero N+1 Overhead"]
+        E --> E1
+    end
+
+    EX00 ==>|"Read via Pool"| EX01 ==>|"Write Operations"| EX02 ==>|"Mutate Records"| EX03 ==>|"Scalable Read"| EX04
+
+    style EX00 fill:#d4edda,stroke:#28a745,color:#000
+    style EX01 fill:#fff3cd,stroke:#ffc107,color:#000
+    style EX02 fill:#ffe5d0,stroke:#fd7e14,color:#000
+    style EX03 fill:#d1ecf1,stroke:#17a2b8,color:#000
+    style EX04 fill:#f8d7da,stroke:#dc3545,color:#000
+```
 
 ---
 
-## Module Directory Structure
+## 🧠 Core Architecture & Design Patterns
+
+### 🏛️ Data Access Object (DAO) / Repository Pattern
+
+```mermaid
+flowchart TD
+    subgraph APP["Application Layer"]
+        CLI["Program.java / Main"]
+    end
+
+    subgraph REPO["Data Access Layer"]
+        IFACE["«interface»\nUsersRepository / MessagesRepository"]
+        IMPL["UsersRepositoryJdbcImpl\nMessagesRepositoryJdbcImpl"]
+        IFACE -.->|implements| IMPL
+    end
+
+    subgraph POOL["Connection Layer"]
+        HIKARI["HikariDataSource\n(Thread-Safe Connection Pool)"]
+    end
+
+    subgraph DB["Database Engine"]
+        PG[("PostgreSQL\n(users, chatrooms, messages)")]
+    end
+
+    CLI -->|"calls interface"| IFACE
+    IMPL -->|"getConnection()"| HIKARI
+    HIKARI -->|"pooled TCP sockets"| PG
+
+    style APP fill:#e3f2fd,stroke:#1565c0,color:#000
+    style REPO fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style POOL fill:#fff3e0,stroke:#e65100,color:#000
+    style DB fill:#ede7f6,stroke:#4527a0,color:#000
+```
+
+---
+
+### ⚡ The $N+1$ Query Problem vs CTE Solution (ex04)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor App as Java Application
+    participant DB as PostgreSQL Database
+
+    Note over App, DB: ❌ The Naive N+1 Anti-Pattern (Slow & Network-Heavy)
+    App->>DB: SELECT * FROM users LIMIT 10 OFFSET 0;
+    loop For each of 10 Users
+        App->>DB: SELECT * FROM chatrooms WHERE owner_id = ?
+        App->>DB: SELECT * FROM users_chatrooms WHERE user_id = ?
+    end
+    Note over App, DB: Total: 1 + 10 + 10 = 21 database round-trips!
+
+    Note over App, DB: ✅ The CTE Single-Trip Pattern (ex04 Implementation)
+    App->>DB: WITH PaginatedUsers AS (SELECT * FROM users LIMIT ? OFFSET ?)<br/>SELECT * FROM PaginatedUsers LEFT JOIN chatrooms... LEFT JOIN users_chatrooms...
+    DB-->>App: Single aggregated tabular result set
+    Note over App, DB: Total: Exactly 1 database round-trip! Java maps rows via LinkedHashMap.
+```
+
+---
+
+## 📋 Concepts Breakdown by Exercise
+
+| Capability / Concept | ex00 | ex01 | ex02 | ex03 | ex04 |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| DDL & DML Scripts (`schema.sql`, `data.sql`) | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Domain Models (`User`, `Chatroom`, `Message`) | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `HikariDataSource` Connection Pooling | | ✅ | ✅ | ✅ | ✅ |
+| `PreparedStatement` Parameter Binding | | ✅ | ✅ | ✅ | ✅ |
+| `ResultSet` to Domain Entity Mapping | | ✅ | ✅ | ✅ | ✅ |
+| Generated Keys Retrieval (`RETURN_GENERATED_KEYS`) | | | ✅ | | |
+| Custom Validation Exception (`NotSavedSubEntityException`) | | | ✅ | | |
+| Handling SQL `NULL` with `Types.TIMESTAMP` | | | | ✅ | |
+| PostgreSQL CTE (`WITH PaginatedUsers AS ...`) | | | | | ✅ |
+| In-Memory Entity Aggregation (`LinkedHashMap`) | | | | | ✅ |
+
+---
+
+## 🎯 Exercises Overview
+
+<table>
+<tr>
+<td width="20%" valign="top">
+
+### 🟢 ex00
+**Tables and Entities**
+
+```text
+schema.sql
+    ↓
+PostgreSQL Tables
+    ↓
+Java Domain Models
+(equals/hashCode by ID)
+```
+
+**Key Files:**
+- `schema.sql`
+- `data.sql`
+- `User.java`
+- `Chatroom.java`
+- `Message.java`
+
+**Takeaway:**
+> Relational foreign keys translate to Java object references and collections.
+
+</td>
+<td width="20%" valign="top">
+
+### 🟡 ex01
+**Read / Find**
+
+```text
+HikariDataSource
+    ↓
+Connection from Pool
+    ↓
+SELECT by ID
+    ↓
+Optional<Message>
+```
+
+**Key Files:**
+- `MessagesRepository`
+- `MessagesRepositoryJdbcImpl`
+- `Program.java`
+
+**Takeaway:**
+> Always return `Optional<T>` for queries that can yield zero rows.
+
+</td>
+<td width="20%" valign="top">
+
+### 🟠 ex02
+**Create / Save**
+
+```text
+Validate Sub-Entities
+    ↓ (Pass)
+INSERT Statement
+    ↓
+Retrieve Generated ID
+    ↓
+entity.setId(newId)
+```
+
+**Key Files:**
+- `save(Message)`
+- `NotSavedSubEntityException`
+
+**Takeaway:**
+> Don't persist child records if author or room does not exist in DB.
+
+</td>
+<td width="20%" valign="top">
+
+### 🔵 ex03
+**Update**
+
+```text
+Existing Entity in DB
+    ↓
+update(Message)
+    ↓
+Handle NULL timestamp
+    ↓
+Database row mutated
+```
+
+**Key Files:**
+- `update(Message)`
+- `Types.TIMESTAMP`
+
+**Takeaway:**
+> Must set `ps.setNull()` explicitly when object fields are `null`.
+
+</td>
+<td width="20%" valign="top">
+
+### 🔴 ex04
+**Find All with CTE**
+
+```text
+WITH PaginatedUsers AS (
+  SELECT * FROM users
+  LIMIT ? OFFSET ?
+)
+LEFT JOIN rooms...
+    ↓
+LinkedHashMap Aggregation
+```
+
+**Key Files:**
+- `findAll(page, size)`
+
+**Takeaway:**
+> Single CTE query eliminates the $N+1$ query performance trap.
+
+</td>
+</tr>
+</table>
+
+---
+
+## 🔑 What You Should Learn and Understand
+
+```mermaid
+flowchart TD
+    A["1️⃣ How relational constraints (PK, FK, Junction) map to OOP"] --> B["2️⃣ How connection pools reduce TCP socket allocation overhead"]
+    B --> C["3️⃣ How PreparedStatement eliminates SQL Injection vulnerabilities"]
+    C --> D["4️⃣ How to retrieve database-generated identity keys safely"]
+    D --> E["5️⃣ How to bind NULL parameters without throwing NullPointerExceptions"]
+    E --> F["6️⃣ How to construct PostgreSQL Common Table Expressions (CTE)"]
+    F --> G["7️⃣ How to fold flat multi-table result rows into nested object graphs"]
+
+    style A fill:#e1f5fe,stroke:#0288d1,color:#000
+    style B fill:#e1f5fe,stroke:#0288d1,color:#000
+    style C fill:#e8f5e9,stroke:#388e3c,color:#000
+    style D fill:#e8f5e9,stroke:#388e3c,color:#000
+    style E fill:#fff3e0,stroke:#f57c00,color:#000
+    style F fill:#fce4ec,stroke:#c2185b,color:#000
+    style G fill:#f3e5f5,stroke:#7b1fa2,color:#000
+```
+
+---
+
+## 💡 Engineering Best Practices
+
+> [!TIP]
+> **Try-With-Resources Everywhere** — Always wrap `Connection`, `PreparedStatement`, and `ResultSet` in `try (...)` blocks. Omitting this causes socket leaks that will eventually lock the PostgreSQL server.
+
+> [!TIP]
+> **Never Concatenate Strings in SQL** — Always use `PreparedStatement` with `?` parameter placeholders. String concatenation like `"WHERE id = " + id` is an immediate security vulnerability.
+
+> [!TIP]
+> **HikariCP Sizing** — Never set pool size arbitrarily high. The optimal pool size follows the formula: `connections = ((core_count * 2) + effective_spindle_count)`.
+
+---
+
+## 📁 Module Directory Structure
 
 ```text
 Module05/
-├── .gitignore
-├── README.md
-├── ex00/
-│   ├── README.md
+├── 📄 .gitignore
+├── 📄 README.md                               ← you are here
+│
+├── 🟢 ex00/
+│   ├── 📄 README.md
 │   └── Chat/
 │       ├── pom.xml
 │       └── src/main/
-│           ├── java/fr/s42/chat/models/ (User, Chatroom, Message)
-│           └── resources/ (schema.sql, data.sql)
-├── ex01/
-│   ├── README.md
+│           ├── java/fr/s42/chat/models/
+│           │   ├── 👤 User.java
+│           │   ├── 💬 Chatroom.java
+│           │   └── ✉️ Message.java
+│           └── resources/
+│               ├── 📄 schema.sql
+│               └── 📄 data.sql
+│
+├── 🟡 ex01/
+│   ├── 📄 README.md
 │   └── Chat/
 │       ├── pom.xml
-│       └── src/main/java/fr/s42/chat/ (app/Program, models, repositories)
-├── ex02/
-│   ├── README.md
+│       └── src/main/java/fr/s42/chat/
+│           ├── 🚀 app/Program.java
+│           ├── 📦 models/ (User, Chatroom, Message)
+│           └── 🗄️ repositories/
+│               ├── 📋 MessagesRepository.java
+│               └── ⚙️ MessagesRepositoryJdbcImpl.java
+│
+├── 🟠 ex02/
+│   ├── 📄 README.md
 │   └── Chat/
 │       ├── pom.xml
-│       └── src/main/java/fr/s42/chat/ (exceptions, models, repositories, app)
-├── ex03/
-│   ├── README.md
+│       └── src/main/java/fr/s42/chat/
+│           ├── 🚀 app/Program.java
+│           ├── ⚠️ exceptions/NotSavedSubEntityException.java
+│           ├── 📦 models/ (User, Chatroom, Message)
+│           └── 🗄️ repositories/MessagesRepositoryJdbcImpl.java
+│
+├── 🔵 ex03/
+│   ├── 📄 README.md
 │   └── Chat/
 │       ├── pom.xml
-│       └── src/main/java/fr/s42/chat/ (models, repositories, app)
-└── ex04/
-    ├── README.md
+│       └── src/main/java/fr/s42/chat/
+│           ├── 🚀 app/Program.java
+│           ├── 📦 models/ (User, Chatroom, Message)
+│           └── 🗄️ repositories/MessagesRepositoryJdbcImpl.java
+│
+└── 🔴 ex04/
+    ├── 📄 README.md
     └── Chat/
         ├── pom.xml
-        └── src/main/java/fr/s42/chat/ (repositories/UsersRepository, etc.)
+        └── src/main/java/fr/s42/chat/
+            ├── 🚀 app/Program.java
+            ├── 📦 models/ (User, Chatroom, Message)
+            └── 🗄️ repositories/
+                ├── 📋 UsersRepository.java
+                └── ⚙️ UsersRepositoryJdbcImpl.java
 ```
+
+---
+
+## 🚀 Quick Start
+
+Ensure a local PostgreSQL instance is running on port `5432` with a database named `chat_db`:
+
+```bash
+# Initialize database schema and seed data
+psql -U postgres -d chat_db -f Module05/ex00/Chat/src/main/resources/schema.sql
+psql -U postgres -d chat_db -f Module05/ex00/Chat/src/main/resources/data.sql
+
+# Exercise 01 (Find by ID)
+cd Module05/ex01/Chat && mvn clean compile exec:java
+
+# Exercise 02 (Save new Message)
+cd Module05/ex02/Chat && mvn clean compile exec:java
+
+# Exercise 03 (Update Message)
+cd Module05/ex03/Chat && mvn clean compile exec:java
+
+# Exercise 04 (CTE Paginated Find All)
+cd Module05/ex04/Chat && mvn clean compile exec:java
+```
+
+---
+
+<div align="center">
+
+*Built as part of the 42 Java Curriculum*
+
+![42](https://img.shields.io/badge/42-School-000000?style=for-the-badge&logo=42&logoColor=white)
+
+</div>

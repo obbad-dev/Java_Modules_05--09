@@ -1,104 +1,323 @@
-# Java Module 07 – Reflection & Annotations
+<div align="center">
 
-## Overview
+# 🪞 Java Module 07 – Reflection & Annotations
 
-Java Module 07 explores **metaprogramming** in Java through two foundational technologies: the **Java Reflection API** (`java.lang.reflect`) and **Java Annotations** (both compile-time processing via `javax.annotation.processing` and runtime processing).
+**Metaprogramming, Runtime Reflection, Compile-Time Annotation Processors (APT) & Custom ORM Engines**
 
-Almost every major Java enterprise framework—such as **Spring Framework**, **Hibernate / JPA**, **Jackson**, and **JUnit**—relies on reflection and annotations to inspect classes dynamically, inject dependencies, map database tables, and execute tests without hardcoding class dependencies. This module demystifies that "framework magic" by having you build three progressively sophisticated mini-frameworks from scratch.
-
----
-
-## Main Programming Concepts Introduced
-
-1. **The Java Reflection API (`java.lang.reflect`)**
-   - Inspecting class metadata at runtime: `Class<?>`, `Field`, `Method`, `Constructor`.
-   - Discovering declared members via `getDeclaredFields()` and `getDeclaredMethods()`.
-   - Bypassing Java access control checks dynamically using `setAccessible(true)`.
-   - Instantiating objects dynamically using `clazz.getDeclaredConstructor().newInstance()`.
-   - Dynamically invoking methods at runtime using `method.invoke(object, args)`.
-
-2. **Annotation Types & Retention Policies**
-   - Creating custom annotations using `@interface`.
-   - `RetentionPolicy.SOURCE`: Annotations retained only in source code and discarded by the compiler; processed by compile-time annotation processors.
-   - `RetentionPolicy.RUNTIME`: Annotations preserved in bytecode and accessible at runtime through reflection (`element.getAnnotation(...)`).
-
-3. **Compile-Time Annotation Processing (APT)**
-   - Extending `javax.annotation.processing.AbstractProcessor`.
-   - Hooking into the Java compiler (`javac`) lifecycle to inspect syntax trees (`TypeElement`, `Element`).
-   - Using the Java `Filer` API to generate artifacts (such as HTML forms) at build time without runtime overhead.
-   - Service Provider Interface (SPI) discovery using Google AutoService (`@AutoService(Processor.class)`).
-
-4. **Object-Relational Mapping (ORM) Engine Design**
-   - Bridging domain models and SQL using annotations (`@OrmEntity`, `@OrmColumn`, `@OrmColumnId`).
-   - Dynamically generating Data Definition Language (`CREATE TABLE`, `DROP TABLE`) and Data Manipulation Language (`INSERT`, `UPDATE`, `SELECT`) queries at runtime based on entity reflection.
+![Java](https://img.shields.io/badge/Java-25-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
+![Reflection](https://img.shields.io/badge/API-java.lang.reflect-007396?style=for-the-badge&logo=java&logoColor=white)
+![APT](https://img.shields.io/badge/Compiler-Annotation_Processor-4CAF50?style=for-the-badge)
+![ORM](https://img.shields.io/badge/Engine-Custom_ORM-FF6F00?style=for-the-badge)
+![AutoService](https://img.shields.io/badge/Google-AutoService-4285F4?style=for-the-badge&logo=google&logoColor=white)
+![Maven](https://img.shields.io/badge/Maven-Build-C71A36?style=for-the-badge&logo=apachemaven&logoColor=white)
 
 ---
 
-## Why These Concepts Are Important
+*From Dynamic Runtime Inspection → Compile-Time Code Generation → Custom ORM Architecture*
 
-- **Decoupling & Inversion of Control**: Reflection enables programs to instantiate and wire components whose concrete types were not known when the code was compiled.
-- **Zero-Boilerplate Code Generation**: Compile-time annotation processing automates tedious tasks (generating DTOs, mappers, HTML templates, serialization logic) during `mvn compile` with zero runtime performance cost.
-- **Understanding Enterprise Frameworks**: Frameworks like Spring and Hibernate are no longer black boxes. You understand exactly how `@Entity` maps to a table, how `@Autowired` injects fields, and how frameworks call methods dynamically.
+</div>
 
 ---
 
-## Main Exercises Covered
+## 📖 Overview
 
-| Exercise | Name | Domain | Key Concepts & Deliverables |
-| :--- | :--- | :--- | :--- |
-| **ex00** | Work with Classes | Runtime Reflection | Interactive CLI inspecting `classes.User` and `classes.Car`, dynamic instantiation, field modification, method invocation |
-| **ex01** | Annotations - SOURCE | Compile-Time Processing | `@HtmlForm`, `@HtmlInput`, `HtmlProcessor extends AbstractProcessor`, AutoService, HTML generation in `target/classes/` |
-| **ex02** | ORM | Runtime ORM Engine | Custom ORM annotations (`@OrmEntity`, `@OrmColumn`, `@OrmColumnId`), `OrmManager` (DDL & DML SQL generator) |
+Java Module 07 explores **metaprogramming** in Java through two foundational mechanisms: the **Java Reflection API** (`java.lang.reflect`) and **Java Annotations** (both compile-time processing via `javax.annotation.processing` and runtime reflection).
 
----
+Nearly every major Java enterprise framework—such as **Spring Framework**, **Hibernate / JPA**, **Jackson**, and **JUnit**—relies on reflection and annotations to inspect classes dynamically, inject dependencies, map database schemas, and execute tests without hardcoding class dependencies. This module demystifies that "framework magic" by having you build three progressively sophisticated systems from scratch:
 
-## What You Should Learn and Understand
+1. An interactive runtime class explorer and dynamic method invoker.
+2. A compile-time annotation processor that generates HTML forms during `mvn compile`.
+3. A lightweight Object-Relational Mapping (ORM) engine generating DDL and DML statements at runtime.
 
-1. How the JVM represents classes in memory as `Class<?>` objects.
-2. How to dynamically inspect fields and methods, read parameter types, and handle type casting.
-3. How `setAccessible(true)` modifies access checks on private fields and methods.
-4. How compile-time annotation processors work during Maven build phases, and how `Filer` outputs generated resources.
-5. How an ORM engine inspects class annotations and fields to generate schema DDL (`CREATE TABLE`) and queries (`INSERT`, `UPDATE`, `SELECT`) dynamically.
+> [!IMPORTANT]
+> Understanding the boundary between **compile-time** (`RetentionPolicy.SOURCE`) and **runtime** (`RetentionPolicy.RUNTIME`) is essential. Compile-time tools eliminate runtime overhead by generating artifacts during compilation, while runtime reflection allows dynamic behavior based on class metadata.
 
 ---
 
-## How Concepts Are Used in My Implementation
+## 🗺️ Module Progression
 
-- **Interactive CLI with Reflection**: In `ex00`, `app.Program` asks the user for a class name in the `classes` package, lists its fields and methods, prompts for values to create an instance via constructor reflection, updates private fields by name, and executes user-specified methods with parsed arguments.
-- **Compiler Hook via AutoService**: In `ex01`, `HtmlProcessor` registers with `javac` using `@AutoService(Processor.class)`. When `mvn clean compile` runs, it scans `@HtmlForm` classes (like `UserForm`), parses `@HtmlInput` field annotations, and generates a formatted HTML form in `target/classes/user_form.html`.
-- **Mini ORM Engine**: In `ex02`, `OrmManager` checks `@OrmEntity` and `@OrmColumn` annotations on `models.User` to generate SQL for table creation with appropriate column types (`VARCHAR`, `INT`, `BIGINT`, `BOOLEAN`), `save()` for inserts, `update()` for modifying records by primary key, and `findById()` for dynamic select queries.
+```mermaid
+flowchart LR
+    subgraph EX00["🟢 Exercise 00"]
+        A["Runtime Reflection\njava.lang.reflect"]
+        A1["Class Explorer\nField & Method Invocation"]
+        A --> A1
+    end
+
+    subgraph EX01["🟡 Exercise 01"]
+        B["Compile-Time APT\nRetentionPolicy.SOURCE"]
+        B1["AbstractProcessor\nHTML Form Generation via Filer"]
+        B --> B1
+    end
+
+    subgraph EX02["🔴 Exercise 02"]
+        C["Runtime ORM Engine\nRetentionPolicy.RUNTIME"]
+        C1["OrmManager\nDynamic DDL & DML Generator"]
+        C --> C1
+    end
+
+    EX00 ==>|"Shift to Compile-Time"| EX01 ==>|"Build Full ORM"| EX02
+
+    style EX00 fill:#d4edda,stroke:#28a745,color:#000
+    style EX01 fill:#fff3cd,stroke:#ffc107,color:#000
+    style EX02 fill:#f8d7da,stroke:#dc3545,color:#000
+```
 
 ---
 
-## Module Directory Structure
+## 🔬 Compile-Time vs Runtime Metaprogramming
+
+```mermaid
+flowchart TD
+    subgraph COMPILE["⚙️ Compile-Time Processing (ex01)"]
+        SRC["Java Source Code\n(@HtmlForm, @HtmlInput)"] --> JAVAC["javac Compiler"]
+        JAVAC --> APT["HtmlProcessor\n(AbstractProcessor)"]
+        APT -->|"Filer API"| HTML["Generated HTML Form\n(target/classes/user_form.html)"]
+        JAVAC --> BYTECODE[".class Bytecode\n(Zero Annotation Overhead)"]
+    end
+
+    subgraph RUNTIME["🚀 Runtime Reflection (ex00 & ex02)"]
+        BYTECODE2[".class Files in JVM"] --> CL["ClassLoader"]
+        CL --> META["Class<?> in Memory\n(Constructor, Field, Method)"]
+        META --> REFLECT["Reflection API (ex00)\n• setAccessible(true)\n• newInstance()\n• invoke()"]
+        META --> ORM["OrmManager (ex02)\n• CREATE TABLE DDL\n• INSERT / UPDATE / SELECT DML"]
+    end
+
+    style COMPILE fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style RUNTIME fill:#e3f2fd,stroke:#1565c0,color:#000
+```
+
+---
+
+## 🏛️ Mini ORM Engine Flow (ex02)
+
+```mermaid
+flowchart TD
+    ENTITY["📦 Java Entity\nUser.java\n• @OrmEntity(table='simple_user')\n• @OrmColumnId (id)\n• @OrmColumn(name='first_name')"] --> MGR["⚙️ OrmManager"]
+
+    MGR -->|"save(entity)"| DDL["DDL: DROP & CREATE TABLE simple_user (...)"]
+    MGR -->|"save(entity)"| INSERT["DML: INSERT INTO simple_user (...) VALUES (...)"]
+    MGR -->|"update(entity)"| UPDATE["DML: UPDATE simple_user SET ... WHERE id = ..."]
+    MGR -->|"findById(id, Class)"| SELECT["DML: SELECT ... FROM simple_user WHERE id = ..."]
+
+    style ENTITY fill:#fff3e0,stroke:#e65100,color:#000
+    MGR fill:#e1f5fe,stroke:#0288d1,color:#000
+    style DDL fill:#f1f8e9,stroke:#558b2f,color:#000
+    style INSERT fill:#ede7f6,stroke:#512da8,color:#000
+    style UPDATE fill:#e0f2f1,stroke:#00695c,color:#000
+    style SELECT fill:#fce4ec,stroke:#ad1457,color:#000
+```
+
+---
+
+## 📋 Concepts Breakdown by Exercise
+
+| Concept / Technology | ex00 | ex01 | ex02 |
+| :--- | :---: | :---: | :---: |
+| `Class<?>`, `Field`, `Method` Introspection | ✅ | | ✅ |
+| Suppressing Access Checks (`setAccessible(true)`) | ✅ | | ✅ |
+| Dynamic Instantiation (`Constructor.newInstance()`) | ✅ | | |
+| Dynamic Method Execution (`Method.invoke()`) | ✅ | | |
+| Custom Annotations (`@interface`) | | ✅ | ✅ |
+| Compile-Time Retention (`RetentionPolicy.SOURCE`) | | ✅ | |
+| Runtime Retention (`RetentionPolicy.RUNTIME`) | | | ✅ |
+| Annotation Processor (`AbstractProcessor`) | | ✅ | |
+| Compiler SPI Hook (`@AutoService(Processor.class)`) | | ✅ | |
+| Output Generation via `Filer` API | | ✅ | |
+| Dynamic DDL Generation (`CREATE TABLE`) | | | ✅ |
+| Dynamic DML Generation (`INSERT`, `UPDATE`, `SELECT`) | | | ✅ |
+
+---
+
+## 🎯 Exercises Overview
+
+<table>
+<tr>
+<td width="33%" valign="top">
+
+### 🟢 ex00
+**Work with Classes**
+
+```text
+User / Car Input
+      ↓
+Class.forName(...)
+      ↓
+Print Fields & Methods
+      ↓
+newInstance() via Prompts
+      ↓
+Dynamic field.set(...)
+      ↓
+method.invoke(...)
+```
+
+**Key Deliverables:**
+- `classes.User`
+- `classes.Car`
+- `app.Program`
+
+**Takeaway:**
+> Reflection allows inspecting and mutating private state at runtime.
+
+</td>
+<td width="33%" valign="top">
+
+### 🟡 ex01
+**Annotations - SOURCE**
+
+```text
+UserForm.java
+  ├── @HtmlForm
+  └── @HtmlInput
+      ↓ (javac)
+HtmlProcessor (APT)
+      ↓ (Filer)
+target/classes/user_form.html
+(Zero runtime footprint)
+```
+
+**Key Deliverables:**
+- `@HtmlForm`, `@HtmlInput`
+- `HtmlProcessor`
+- AutoService SPI descriptor
+
+**Takeaway:**
+> Compile-time processors generate files during compilation with zero runtime cost.
+
+</td>
+<td width="33%" valign="top">
+
+### 🔴 ex02
+**ORM Framework**
+
+```text
+User Entity
+  ├── @OrmEntity
+  ├── @OrmColumnId
+  └── @OrmColumn
+      ↓
+OrmManager (Reflection)
+      ↓
+DDL: CREATE TABLE
+DML: INSERT, UPDATE, SELECT
+```
+
+**Key Deliverables:**
+- `@OrmEntity`, `@OrmColumn`, `@OrmColumnId`
+- `models.User`
+- `manager.OrmManager`
+
+**Takeaway:**
+> ORMs dynamically generate SQL by reading field and class metadata at runtime.
+
+</td>
+</tr>
+</table>
+
+---
+
+## 🔑 What You Should Learn and Understand
+
+```mermaid
+flowchart TD
+    A["1️⃣ How the JVM represents classes in memory via Class<?>"] --> B["2️⃣ Difference between getFields() and getDeclaredFields()"]
+    B --> C["3️⃣ Why setAccessible(true) is required for private fields"]
+    C --> D["4️⃣ The three RetentionPolicy levels: SOURCE, CLASS, RUNTIME"]
+    D --> E["5️⃣ How javac invokes AbstractProcessor plugins during build phase"]
+    E --> F["6️⃣ How Google AutoService generates META-INF provider descriptors"]
+    F --> G["7️⃣ How ORMs bridge object fields to SQL columns dynamically"]
+
+    style A fill:#e1f5fe,stroke:#0288d1,color:#000
+    style B fill:#e1f5fe,stroke:#0288d1,color:#000
+    style C fill:#e8f5e9,stroke:#388e3c,color:#000
+    style D fill:#e8f5e9,stroke:#388e3c,color:#000
+    style E fill:#fff3e0,stroke:#f57c00,color:#000
+    style F fill:#fce4ec,stroke:#c2185b,color:#000
+    style G fill:#f3e5f5,stroke:#7b1fa2,color:#000
+```
+
+---
+
+## 💡 Engineering Best Practices
+
+> [!TIP]
+> **Use Reflection Sparingly** — Reflection bypasses compile-time type safety and is slower than direct invocations. Use it for frameworks, serialization, or plugin architectures, but avoid it in high-frequency business loops.
+
+> [!TIP]
+> **Choose the Right Retention Policy** — If an annotation is only used by a code generator or compiler linter, use `RetentionPolicy.SOURCE`. Keeping unused metadata in `.class` bytecode wastes memory.
+
+> [!TIP]
+> **Handle Primitives in Reflection** — Primitive types (`int`, `double`) are boxed into wrapper objects (`Integer`, `Double`) when accessed reflectively. If a method returns `void`, `method.invoke()` returns `null`.
+
+---
+
+## 📁 Module Directory Structure
 
 ```text
 Module07/
-├── .gitignore
-├── README.md
-├── ex00/
-│   ├── README.md
+├── 📄 .gitignore
+├── 📄 README.md                               ← you are here
+│
+├── 🟢 ex00/
+│   ├── 📄 README.md
 │   └── Reflection/
 │       ├── pom.xml
 │       └── src/main/java/
-│           ├── app/Program.java
-│           └── classes/ (User.java, Car.java)
-├── ex01/
-│   ├── README.md
+│           ├── 🚀 app/Program.java
+│           └── 📦 classes/
+│               ├── 👤 User.java
+│               └── 🚗 Car.java
+│
+├── 🟡 ex01/
+│   ├── 📄 README.md
 │   └── Annotations/
 │       ├── pom.xml
 │       └── src/main/java/
-│           ├── annotations/ (HtmlForm.java, HtmlInput.java)
-│           ├── forms/UserForm.java
-│           └── processor/HtmlProcessor.java
-└── ex02/
-    ├── README.md
+│           ├── 🏷️ annotations/
+│           │   ├── 📄 HtmlForm.java
+│           │   └── 📄 HtmlInput.java
+│           ├── 📋 forms/UserForm.java
+│           └── ⚙️ processor/HtmlProcessor.java
+│
+└── 🔴 ex02/
+    ├── 📄 README.md
     └── ORM/
         ├── .gitignore
         ├── pom.xml
         └── src/main/java/
-            ├── annotations/ (OrmEntity.java, OrmColumn.java, OrmColumnId.java)
-            ├── models/User.java
-            ├── manager/OrmManager.java
-            └── app/Main.java
+            ├── 🏷️ annotations/
+            │   ├── 📄 OrmEntity.java
+            │   ├── 📄 OrmColumn.java
+            │   └── 📄 OrmColumnId.java
+            ├── 🚀 app/Main.java
+            ├── 📦 models/User.java
+            └── ⚙️ manager/OrmManager.java
 ```
+
+---
+
+## 🚀 Quick Start
+
+```bash
+# Exercise 00 (Interactive Reflection CLI)
+cd Module07/ex00/Reflection && mvn clean compile exec:java
+
+# Exercise 01 (Compile-time HTML Form Generation)
+cd Module07/ex01/Annotations && mvn clean compile
+# Inspect generated HTML file:
+cat target/classes/user_form.html
+
+# Exercise 02 (Mini ORM SQL Generator)
+cd Module07/ex02/ORM && mvn clean compile exec:java -Dexec.mainClass="app.Main"
+```
+
+---
+
+<div align="center">
+
+*Built as part of the 42 Java Curriculum*
+
+![42](https://img.shields.io/badge/42-School-000000?style=for-the-badge&logo=42&logoColor=white)
+
+</div>

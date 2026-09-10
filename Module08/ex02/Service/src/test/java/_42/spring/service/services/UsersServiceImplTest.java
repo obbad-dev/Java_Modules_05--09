@@ -1,28 +1,47 @@
 package _42.spring.service.services;
 
-import org.h2.command.dml.Call;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Optional;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+
+import _42.spring.service.config.TestApplicationConfig;
+import _42.spring.service.models.User;
+import _42.spring.service.repositories.UsersRepository;
+
+// @ExtendWith (SpringExtension.class)
+// @ContextConfiguration (classes = TestApplicationConfig.class)
+
+@SpringJUnitConfig(TestApplicationConfig.class)
 public class UsersServiceImplTest {
 
-//       ### 1. Tell Spring to load your test config
-  
-//   You need two annotations on the class:
-  
-//   • @ExtendWith(SpringExtension.class) — integrates JUnit 5 with Spring (tells JUnit to boot a Spring context)
-//   • @ContextConfiguration(classes = TestApplicationConfig.class) — tells Spring which config to use
-  
-//   ### 2. Inject the service
-  
-//   Use @Autowired to get UsersServiceImpl injected into a field in your test class — just like Spring injects dependencies in production code.
-  
-//   ### 3. Write a test method
-  
-//   Annotate a method with @Test (from JUnit 5). Inside it:
-  
-//   • Call signUp() with a test email
-//   • Store the returned password
-//   • Use Assertions.assertNotNull(password) to verify it's not null
-//   • Use Assertions.assertFalse(password.isEmpty()) to verify it's not empty
+    @Autowired 
+    private UsersService usersService;
+    @Autowired
+    private UsersRepository usersRepository;
+
+    String email = "oualidobbad@test.com";
+
+    @Test
+    public void testSignUpMethod()
+    {
+        String pass = usersService.signUp(email);
+        assertNotNull(pass, "Returned password should not be null");
+        assertFalse(pass.trim().isEmpty(), "password must be not Empty");
+
+    }
+    @Test
+    public void testRepositoryMethod()
+    {
+        Optional<User> user = usersRepository.findByEmail(email);
+        assertTrue(user.isPresent(), "User must be found in the H2 database");
+        assertEquals(email, user.get().getEmail(), "Found email must match");
+    }
+
 }
