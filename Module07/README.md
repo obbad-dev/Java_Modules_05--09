@@ -95,13 +95,13 @@ flowchart TD
 flowchart TD
     ENTITY["📦 Java Entity\nUser.java\n• @OrmEntity(table='simple_user')\n• @OrmColumnId (id)\n• @OrmColumn(name='first_name')"] --> MGR["⚙️ OrmManager"]
 
-    MGR -->|"save(entity)"| DDL["DDL: DROP & CREATE TABLE simple_user (...)"]
+    MGR -->|"save(entity)"| DDL["DDL: DROP and CREATE TABLE simple_user (...)"]
     MGR -->|"save(entity)"| INSERT["DML: INSERT INTO simple_user (...) VALUES (...)"]
     MGR -->|"update(entity)"| UPDATE["DML: UPDATE simple_user SET ... WHERE id = ..."]
     MGR -->|"findById(id, Class)"| SELECT["DML: SELECT ... FROM simple_user WHERE id = ..."]
 
     style ENTITY fill:#fff3e0,stroke:#e65100,color:#000
-    MGR fill:#e1f5fe,stroke:#0288d1,color:#000
+    style MGR fill:#e1f5fe,stroke:#0288d1,color:#000
     style DDL fill:#f1f8e9,stroke:#558b2f,color:#000
     style INSERT fill:#ede7f6,stroke:#512da8,color:#000
     style UPDATE fill:#e0f2f1,stroke:#00695c,color:#000
